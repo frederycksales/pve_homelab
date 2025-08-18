@@ -1,0 +1,29 @@
+# Variáveis padrão para os playbooks
+---
+# Configurações do Template
+default_template_id: 301  # Ajuste conforme seu template
+
+# Configurações de Rede (ajuste conforme seu ambiente)
+network:
+  subnet: "192.168.50"  # Primeiros 3 octetos da sua rede
+  gateway: "192.168.50.1"
+  dns: "192.168.50.1"
+
+# Configurações de Storage
+storage:
+  target: "local-lvm"  # Storage padrão do Proxmox
+
+# Configurações de SSH
+ssh:
+  key_path: "~/.ssh/id_rsa.pub"  # Caminho para sua chave SSH pública
+
+# Limites de validação
+vm_limits:
+  id_min: 100
+  id_max: 999999
+  memory_min: 512
+  memory_max: 32768
+  cores_min: 1
+  cores_max: 16
+  disk_min: 10
+  disk_max: 1000

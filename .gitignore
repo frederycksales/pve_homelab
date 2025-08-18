@@ -1,0 +1,43 @@
+# Configurações sensíveis do ambiente
+inventory.ini
+inventory_prod.ini
+inventory_local.ini
+
+# Chaves SSH e certificados
+*.pem
+*.key
+id_rsa*
+*.pub
+.ssh/
+
+# Senhas e tokens
+.vault_pass
+vault_pass.txt
+secrets/
+.secrets
+
+# Variáveis específicas do ambiente
+host_vars/production/
+group_vars/production/
+vars/production.yml
+vars/local.yml
+
+# Logs e outputs temporários
+*.log
+logs/
+tmp/
+.tmp/
+
+# Arquivos de sistema
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+
+# Backups
+*.backup
+*.bak
+*~
+
+# Arquivos temporários do Ansible
+*.retry
+.ansible/

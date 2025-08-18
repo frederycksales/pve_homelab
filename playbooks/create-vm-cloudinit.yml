@@ -1,0 +1,115 @@
+---
+- name: Criar uma nova VM com Cloud-Init no Proxmox
+  hosts: pve
+  gather_facts: no
+
+  vars_files:
+    - ../vars/defaults.yml
+
+  vars_prompt:
+    - name: "vm_id"
+      prompt: "Digite o ID para a nova VM"
+      private: no
+    - name: "vm_name"
+      prompt: "Digite o nome (hostname) para a nova VM"
+      private: no
+    - name: "vm_user"
+      prompt: "Digite o nome do usuário sudo para a nova VM"
+      private: no
+    - name: "vm_password"
+      prompt: "Digite a senha para o novo usuário"
+      private: yes # A senha não será exibida na tela
+    - name: "disk_size"
+      prompt: "Digite o tamanho do disco em GB (ex: 50)"
+      private: no
+    - name: "memory"
+      prompt: "Digite a quantidade de memória em MB (ex: 4096)"
+      private: no
+    - name: "cores"
+      prompt: "Digite o número de cores de CPU (ex: 2)"
+      private: no
+
+  vars:
+    template_id: "{{ default_template_id }}" # ID do template com cloud-init
+    ssh_key: "{{ lookup('file', ssh.key_path) }}" # Lê sua chave SSH pública
+
+  tasks:
+    - name: Validar ID da VM
+      fail:
+        msg: "VM ID deve estar entre {{ vm_limits.id_min }} e {{ vm_limits.id_max }}"
+      when: vm_id | int < vm_limits.id_min or vm_id | int > vm_limits.id_max
+
+    - name: Validar tamanho do disco
+      fail:
+        msg: "Tamanho do disco deve estar entre {{ vm_limits.disk_min }}GB e {{ vm_limits.disk_max }}GB"
+      when: disk_size | int < vm_limits.disk_min or disk_size | int > vm_limits.disk_max
+
+    - name: Validar quantidade de memória
+      fail:
+        msg: "Memória deve estar entre {{ vm_limits.memory_min }}MB e {{ vm_limits.memory_max }}MB"
+      when: memory | int < vm_limits.memory_min or memory | int > vm_limits.memory_max
+
+    - name: Validar número de cores
+      fail:
+        msg: "Cores devem estar entre {{ vm_limits.cores_min }} e {{ vm_limits.cores_max }}"
+      when: cores | int < vm_limits.cores_min or cores | int > vm_limits.cores_max
+
+    - name: Verificar se VM ID já existe
+      stat:
+        path: "/etc/pve/qemu-server/{{ vm_id }}.conf"
+      register: vm_exists
+
+    - name: Falhar se VM já existir
+      fail:
+        msg: "VM com ID {{ vm_id }} já existe!"
+      when: vm_exists.stat.exists
+
+    - name: Clonar VM a partir do template cloud-init
+      command: "qm clone {{ template_id }} {{ vm_id }} --name {{ vm_name }} --full"
+      args:
+        creates: "/etc/pve/qemu-server/{{ vm_id }}.conf"
+
+    - name: Criar arquivo temporário com a chave SSH
+      copy:
+        content: "{{ ssh_key }}"
+        dest: "/tmp/ssh_key_{{ vm_id }}.pub"
+
+    - name: Configurar usuário, senha e chave SSH via Cloud-Init
+      command: >
+        qm set {{ vm_id }}
+        --ciuser {{ vm_user }}
+        --cipassword {{ vm_password }}
+        --sshkeys /tmp/ssh_key_{{ vm_id }}.pub
+
+    - name: Remover arquivo temporário da chave SSH
+      file:
+        path: "/tmp/ssh_key_{{ vm_id }}.pub"
+        state: absent
+
+    - name: Configurar a rede via Cloud-Init
+      vars:
+        vm_ip: "{{ network.subnet }}.{{ vm_id }}/24"
+        gateway: "{{ network.gateway }}"
+      command: "qm set {{ vm_id }} --ipconfig0 ip={{ vm_ip }},gw={{ gateway }}"
+
+    - name: Configurar memória e CPU da VM
+      command: "qm set {{ vm_id }} --memory {{ memory }} --cores {{ cores }}"
+
+    - name: Redimensionar o disco da VM
+      command: "qm resize {{ vm_id }} scsi0 {{ disk_size }}G"
+
+    - name: Iniciar a VM para aplicar as configurações do Cloud-Init
+      command: "qm start {{ vm_id }}"
+
+    - name: Aguardar VM ficar acessível via SSH
+      wait_for:
+        host: "{{ network.subnet }}.{{ vm_id }}"
+        port: 22
+        timeout: 300
+        delay: 30
+      delegate_to: localhost # Executa esta tarefa a partir da máquina, não do PVE
+
+    - name: Imprimir mensagem de sucesso
+      debug:
+        msg: "VM {{ vm_name }} (ID: {{ vm_id }}) criada e online. Acesse com: ssh {{ vm_user }}@{{ network.subnet }}.{{ vm_id }}"
+

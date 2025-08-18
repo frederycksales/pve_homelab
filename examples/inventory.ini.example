@@ -1,0 +1,17 @@
+# Exemplo de arquivo de inventário do Ansible para Proxmox
+# Copie este arquivo para inventory.ini e ajuste as configurações
+
+[proxmox]
+pve ansible_host=YOUR_PROXMOX_IP ansible_user=root
+
+# Exemplo com IP específico:
+# pve ansible_host=192.168.1.100 ansible_user=root
+
+[proxmox:vars]
+# Configurações opcionais do SSH
+ansible_ssh_private_key_file=~/.ssh/id_rsa
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[all:vars]
+# Timeout para conexões
+ansible_timeout=30

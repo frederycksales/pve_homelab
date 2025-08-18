@@ -1,0 +1,71 @@
+---
+- name: Criar uma nova VM no Proxmox
+  hosts: pve # O nome que demos no inventário
+  gather_facts: no # Não precisamos coletar fatos do servidor para esta tarefa
+
+  vars_files:
+    - ../vars/defaults.yml
+
+  vars_prompt:
+    - name: "vm_id"
+      prompt: "Digite o ID para a nova VM"
+      private: no
+    - name: "vm_name"
+      prompt: "Digite o nome (hostname) para a nova VM"
+      private: no
+    - name: "disk_size"
+      prompt: "Digite o tamanho do disco em GB (ex: 50)"
+      private: no
+    - name: "memory"
+      prompt: "Digite a quantidade de memória em MB (ex: 4096)"
+      private: no
+    - name: "cores"
+      prompt: "Digite o número de cores de CPU (ex: 2)"
+      private: no
+
+  vars:
+    template_id: "{{ default_template_id }}" # ID do seu template
+
+  tasks:
+    - name: Validar parâmetros de entrada
+      fail:
+        msg: "{{ item.msg }}"
+      when: "{{ item.condition }}"
+      loop:
+        - { msg: "VM ID deve estar entre {{ vm_limits.id_min }} e {{ vm_limits.id_max }}", condition: "vm_id | int < vm_limits.id_min or vm_id | int > vm_limits.id_max" }
+        - { msg: "Disco deve estar entre {{ vm_limits.disk_min }}GB e {{ vm_limits.disk_max }}GB", condition: "disk_size | int < vm_limits.disk_min or disk_size | int > vm_limits.disk_max" }
+        - { msg: "Memória deve estar entre {{ vm_limits.memory_min }}MB e {{ vm_limits.memory_max }}MB", condition: "memory | int < vm_limits.memory_min or memory | int > vm_limits.memory_max" }
+        - { msg: "Cores devem estar entre {{ vm_limits.cores_min }} e {{ vm_limits.cores_max }}", condition: "cores | int < vm_limits.cores_min or cores | int > vm_limits.cores_max" }
+
+    - name: Verificar se VM ID já existe
+      stat:
+        path: "/etc/pve/qemu-server/{{ vm_id }}.conf"
+      register: vm_exists
+
+    - name: Falhar se VM já existir
+      fail:
+        msg: "VM com ID {{ vm_id }} já existe!"
+      when: vm_exists.stat.exists
+
+    - name: Clonar VM a partir do template
+      command: "qm clone {{ template_id }} {{ vm_id }} --name {{ vm_name }} --full"
+      args:
+        creates: "/etc/pve/qemu-server/{{ vm_id }}.conf" # O playbook só executa se a VM não existir
+
+    - name: Redimensionar o disco da VM
+      command: "qm resize {{ vm_id }} scsi0 {{ disk_size }}G"
+
+    - name: Configurar memória e CPU da VM
+      command: "qm set {{ vm_id }} --memory {{ memory }} --cores {{ cores }}"
+
+    - name: Configurar a rede da VM
+      vars:
+        vm_ip: "{{ network.subnet }}.{{ vm_id }}/24"
+        gateway: "{{ network.gateway }}"
+        dns: "{{ network.dns }}"
+      command: "qm set {{ vm_id }} --ipconfig0 ip={{ vm_ip }},gw={{ gateway }} --nameserver {{ dns }}"
+
+    - name: Imprimir mensagem de sucesso
+      debug:
+        msg: "VM {{ vm_name }} (ID: {{ vm_id }}) criada e configurada com sucesso! IP: {{ network.subnet }}.{{ vm_id }}"
+
