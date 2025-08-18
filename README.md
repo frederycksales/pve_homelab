@@ -62,9 +62,11 @@ cd pve-homelab
 
 ### 2. Configuração
 ```bash
-# Copiar e configurar inventário
-cp examples/inventory.ini.example inventory.ini
-# Editar inventory.ini com IP do seu Proxmox
+# Configurar ambiente local
+./scripts/setup-local.sh
+
+# Editar com seu IP do Proxmox
+nano inventory.ini
 
 # Verificar configuração
 ./scripts/check-setup.sh

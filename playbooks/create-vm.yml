@@ -5,6 +5,7 @@
 
   vars_files:
     - ../vars/defaults.yml
+    - ../vars/local.yml
 
   vars_prompt:
     - name: "vm_id"

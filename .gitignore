@@ -3,6 +3,11 @@ inventory.ini
 inventory_prod.ini
 inventory_local.ini
 
+# Configurações locais específicas
+vars/local.yml
+vars/production.yml
+vars/secrets.yml
+
 # Chaves SSH e certificados
 *.pem
 *.key
@@ -19,8 +24,6 @@ secrets/
 # Variáveis específicas do ambiente
 host_vars/production/
 group_vars/production/
-vars/production.yml
-vars/local.yml
 
 # Logs e outputs temporários
 *.log

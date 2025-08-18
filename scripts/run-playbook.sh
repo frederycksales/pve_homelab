@@ -38,8 +38,8 @@ fi
 # Verificar se inventory existe
 if [[ ! -f "inventory.ini" ]]; then
     error "Arquivo inventory.ini não encontrado!"
-    echo "Execute: cp examples/inventory.ini.example inventory.ini"
-    echo "E configure com o IP do seu Proxmox"
+    echo "Execute: ./scripts/setup-local.sh"
+    echo "Depois configure o IP do seu Proxmox"
     exit 1
 fi
 
