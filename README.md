@@ -127,7 +127,7 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para de
 
 ## 📞 Contato
 
-**Frederyck** - [LinkedIn]([https://linkedin.com/in/seu-perfil](http://www.linkedin.com/in/frederyck-baleeiro-espinheiro-sales-4836b4125)) - [GitHub]([https://github.com/seu-usuario](https://github.com/frederycksales))
+**Frederyck** – [LinkedIn](https://www.linkedin.com/in/frederyck-baleeiro-espinheiro-sales-4836b4125) – [GitHub](https://github.com/frederycksales)
 
 ---
 ⭐ **Star este repositório se foi útil para você!**
